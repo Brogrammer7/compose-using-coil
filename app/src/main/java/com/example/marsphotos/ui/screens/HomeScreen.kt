@@ -20,7 +20,6 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -29,6 +28,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
+import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Text
@@ -41,6 +41,7 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
 import com.example.marsphotos.R
@@ -50,13 +51,14 @@ import com.example.marsphotos.ui.theme.MarsPhotosTheme
 @Composable
 fun HomeScreen(
     marsUiState: MarsUiState,
+    retryAction: () -> Unit,
     modifier: Modifier = Modifier,
     contentPadding: PaddingValues = PaddingValues(0.dp),
 ) {
     when (marsUiState) {
         is MarsUiState.Loading -> LoadingScreen(modifier = modifier.fillMaxSize())
         is MarsUiState.Success -> PhotosGridScreen(marsUiState.photos)
-        is MarsUiState.Error -> ErrorScreen(modifier = modifier.fillMaxSize())
+        is MarsUiState.Error -> ErrorScreen(retryAction, modifier = modifier.fillMaxSize())
     }
 }
 
@@ -76,7 +78,7 @@ fun LoadingScreen(modifier: Modifier = Modifier) {
  * The home screen displaying error message with re-attempt button.
  */
 @Composable
-fun ErrorScreen(modifier: Modifier = Modifier) {
+fun ErrorScreen(retryAction: () -> Unit, modifier: Modifier = Modifier) {
     Column(
         modifier = modifier,
         verticalArrangement = Arrangement.Center,
@@ -86,6 +88,10 @@ fun ErrorScreen(modifier: Modifier = Modifier) {
             painter = painterResource(id = R.drawable.ic_connection_error), contentDescription = ""
         )
         Text(text = stringResource(R.string.loading_failed), modifier = Modifier.padding(16.dp))
+
+        Button(onClick = retryAction) {
+            Text(stringResource(R.string.retry))
+        }
     }
 }
 
@@ -158,7 +164,9 @@ fun LoadingScreenPreview() {
 @Composable
 fun ErrorScreenPreview() {
     MarsPhotosTheme {
-        ErrorScreen()
+        val marsViewModel: MarsViewModel =
+            viewModel(factory = MarsViewModel.Factory)
+        ErrorScreen(retryAction = marsViewModel::getMarsPhotos)
     }
 }
 
